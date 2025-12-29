@@ -1,0 +1,85 @@
+services:
+  # Keycloak Identity Provider
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak-sso
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HTTP_PORT=8080
+      - KC_HOSTNAME=localhost
+      - KC_HOSTNAME_STRICT=false
+      - KC_HOSTNAME_STRICT_BACKCHANNEL=false
+      - KC_HTTP_ENABLED=true
+    ports:
+      - "8080:8080"
+    command:
+      - start-dev
+      - --import-realm
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      - ./keycloak/realm-config:/opt/keycloak/data/import
+    networks:
+      sso-network:
+        aliases:
+          - keycloak
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+  # Django Application
+  django-app:
+    build:
+      context: ./app-django
+      dockerfile: Dockerfile
+    container_name: django-sso
+    environment:
+      - DEBUG=True
+      - DJANGO_SECRET_KEY=django-secret-key-change-in-production
+      - KEYCLOAK_SERVER_URL=http://localhost:8080
+      - KEYCLOAK_PUBLIC_URL=http://localhost:8080
+      - KEYCLOAK_REALM=sso-demo
+      - KEYCLOAK_CLIENT_ID=django-app
+      - KEYCLOAK_CLIENT_SECRET=django-client-secret
+      - ALLOWED_HOSTS=localhost,127.0.0.1,django-app
+    ports:
+      - "8000:8000"
+    networks:
+      - sso-network
+    extra_hosts:
+      - "localhost:host-gateway"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+  # Next.js Application
+  nextjs-app:
+    build:
+      context: ./app-nextjs
+      dockerfile: Dockerfile
+    container_name: nextjs-sso
+    environment:
+      - KEYCLOAK_CLIENT_ID=nextjs-app
+      - KEYCLOAK_CLIENT_SECRET=nextjs-client-secret
+      - KEYCLOAK_SERVER_URL=http://localhost:8080
+      - KEYCLOAK_PUBLIC_URL=http://localhost:8080
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=nextauth-secret-key-change-in-production
+    ports:
+      - "3000:3000"
+    networks:
+      - sso-network
+    extra_hosts:
+      - "localhost:host-gateway"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+networks:
+  sso-network:
+    driver: bridge
+
+volumes:
+  keycloak_data:

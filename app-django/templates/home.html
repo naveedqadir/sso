@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Django SSO App{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Welcome to Django SSO Demo</h2>
+    
+    {% if user.is_authenticated %}
+        <div class="user-info">
+            <p><strong>Logged in as:</strong> {{ user.username }} <span class="badge">Authenticated</span></p>
+            <p><strong>Email:</strong> {{ user.email|default:"Not provided" }}</p>
+        </div>
+        <p>You are successfully authenticated via <strong>Keycloak SSO</strong>!</p>
+        <p>This demonstrates Single Sign-On working with the Django application.</p>
+        <div style="margin-top: 1.5rem;">
+            <a href="/profile/" class="btn">View Profile</a>
+            <a href="{{ nextjs_app_url }}" class="btn btn-secondary">Go to Next.js App</a>
+        </div>
+    {% else %}
+        <p>This is a demonstration of <strong>Single Sign-On (SSO)</strong> using Keycloak as the Identity Provider.</p>
+        <p>Click the button below to login via Keycloak. Once logged in, you'll also be authenticated on the Next.js app!</p>
+        <div style="margin-top: 1.5rem;">
+            <a href="/accounts/oidc/keycloak/login/" class="btn">Login with Keycloak</a>
+            <a href="{{ nextjs_app_url }}" class="btn btn-secondary">Go to Next.js App</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
