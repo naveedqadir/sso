@@ -74,7 +74,7 @@ Users authenticate once with Keycloak and gain seamless access to both applicati
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/naveedqadir/sso?tab=readme-ov-file#project-structure
 cd sso-demo
 
 # Start the stack
